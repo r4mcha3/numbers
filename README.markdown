@@ -106,9 +106,6 @@ open index.html
 - **Math Functions**: Custom implementations for calculating divisors, factors, Catalan numbers, Bell numbers, Fibonacci numbers, and base conversions.
 - **BigInt**: Used for factorial calculations to handle large numbers accurately.
 
-## Authors
-
-- **Ramona Chae**
 
 ## License
 
