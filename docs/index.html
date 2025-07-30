@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Reference App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        canvas { border: 1px solid #ccc; }
+        body { font-family: Arial, sans-serif; }
+        input { width: 100px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+    <div class="flex flex-col items-center p-4">
+        <h1 class="text-2xl font-bold text-gray-200">1001 Integers: Divisors & More</h1>
+        <p class="text-sm text-gray-400">by Ramona Chae</p>
+        <div class="my-2">
+            <label for="numberInput" class="text-gray-200">Enter Number (0-1001):</label>
+            <input type="number" id="numberInput" min="0" max="1001" value="1" class="text-black p-1 rounded">
+        </div>
+        <canvas id="numberCanvas" width="1001" height="195"></canvas>
+        <p class="text-xs text-gray-400 text-center mt-2">
+            Controls: Click and drag on the number line or use left/right arrow keys. Up/down keys increase/decrease by 12. Type a number above.
+        </p>
+    </div>
+
+    <script>
+        class DivInfo {
+            constructor(num) {
+                this.num = num;
+                this.primeList = [];
+                this.catalan = new Array(10).fill(0);
+                this.bell = new Array(10).fill(0);
+                this.allPrimesLessThanN(8000);
+                this.catalan = this.makeCatalan();
+                this.bellGenerator();
+            }
+
+            getDivs(num) {
+                let result = "";
+                for (let i = 1; i <= num; i++) {
+                    if (num % i === 0) {
+                        result += i + " ";
+                    }
+                }
+                return result.trim();
+            }
+
+            getFactors(num) {
+                let result = "";
+                for (let f = 2; f * f <= num; f++) {
+                    while (num % f === 0) {
+                        result += f + " ";
+                        num /= f;
+                    }
+                }
+                if (num > 1) result += num;
+                return result.trim();
+            }
+
+            divSum(num) {
+                let result = 0;
+                for (let i = 2; i <= Math.sqrt(num); i++) {
+                    if (num % i === 0) {
+                        if (i === num / i) {
+                            result += i;
+                        } else {
+                            result += i + num / i;
+                        }
+                    }
+                }
+                return result + 1;
+            }
+
+            divSum2(num) {
+                return this.divSum(num) + num;
+            }
+
+            isPrime(num) {
+                if (num < 2) return false;
+                let squarert = Math.floor(Math.sqrt(num)) + 1;
+                for (let i = 2; i < squarert; i++) {
+                    if (num % i === 0) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            convert(number, base) {
+                const symbols = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+                if (number < base) {
+                    return symbols[number];
+                } else {
+                    let q = Math.floor(number / base);
+                    let rem = number % base;
+                    return this.convert(q, base) + symbols[rem];
+                }
+            }
+
+            isFibonacci(num) {
+                let fib1 = 0, fib2 = 1;
+                while (fib2 < num) {
+                    let saveFib1 = fib1;
+                    fib1 = fib2;
+                    fib2 = saveFib1 + fib2;
+                }
+                return fib2 === num;
+            }
+
+            factorial(n) {
+                let result = BigInt(1);
+                for (let i = 1; i <= n; i++) {
+                    result *= BigInt(i);
+                }
+                return result;
+            }
+
+            makeCatalan() {
+                let returnVal = new Array(10).fill(0);
+                for (let i = 1; i <= 10; i++) {
+                    let fact2i = this.factorial(2 * i);
+                    let facti1 = this.factorial(i + 1);
+                    let facti = this.factorial(i);
+                    returnVal[i - 1] = Number(fact2i / (facti1 * facti));
+                }
+                return returnVal;
+            }
+
+            isCatalan(n) {
+                return this.catalan.includes(n);
+            }
+
+            isHamming(n) {
+                let num = n;
+                while (num % 5 === 0) num /= 5;
+                while (num % 3 === 0) num /= 3;
+                while (num % 2 === 0) num /= 2;
+                return num === 1;
+            }
+
+            allPrimesLessThanN(n) {
+                this.primeList = [];
+                for (let i = 1; i <= n; i++) {
+                    if (this.isPrime(i)) {
+                        this.primeList.push(i);
+                    }
+                }
+            }
+
+            bellGenerator() {
+                this.bell[0] = 1;
+                this.bell[1] = 1;
+                for (let i = 2; i < this.bell.length; i++) {
+                    this.bell[i] = this.recurrBell(i);
+                }
+            }
+
+            nComb(n, k) {
+                let result = this.factorial(n) / (this.factorial(k) * this.factorial(n - k));
+                return Number(result);
+            }
+
+            recurrBell(n) {
+                let sum = 0;
+                for (let i = 0; i < n; i++) {
+                    sum += this.nComb(n - 1, i) * this.bell[i];
+                }
+                return sum;
+            }
+
+            isBell(n) {
+                return this.bell.includes(n);
+            }
+        }
+
+        const canvas = document.getElementById('numberCanvas');
+        const ctx = canvas.getContext('2d');
+        const divs = new Array(1002).fill(null).map((_, i) => new DivInfo(i));
+        let currentNum = 1;
+
+        function draw() {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Header
+            ctx.fillStyle = '#323247';
+            ctx.fillRect(0, 0, canvas.width, 75);
+            ctx.fillStyle = '#E3DBB6';
+            ctx.font = '21px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillText('1001 Integers: Divisors & More', 20, 22);
+            ctx.font = '10px Arial';
+            ctx.fillText('by Ramona Chae', 23, 36);
+
+            // Current Number
+            ctx.font = '50px Arial';
+            ctx.fillStyle = '#BABACF';
+            ctx.fillText(currentNum, 405, 55);
+            ctx.fillStyle = '#0A0A0A';
+            ctx.fillText(currentNum, 407, 57);
+
+            // Number Line
+            ctx.fillStyle = '#424242';
+            ctx.fillRect(0, 75, canvas.width, 40);
+            ctx.strokeStyle = '#E3DBB6';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, 100);
+            ctx.lineTo(canvas.width, 100);
+            ctx.stroke();
+
+            for (let i = 0; i < canvas.width; i += 25) {
+                ctx.beginPath();
+                ctx.moveTo(i, 95);
+                ctx.lineTo(i, 105);
+                ctx.stroke();
+                ctx.font = '8px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(i, i, 90);
+            }
+
+            ctx.strokeStyle = '#FF0000';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(currentNum, 95);
+            ctx.lineTo(currentNum, 105);
+            ctx.stroke();
+
+            // Number Properties
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#E3DBB6';
+            let divsText = divs[currentNum].getDivs(currentNum);
+            if (divsText.includes('1 2 3 4 5 6 7')) {
+                ctx.fillStyle = '#FF0000';
+            } else if (divsText.includes('1 2 3 4 5 6')) {
+                ctx.fillStyle = '#FFA500';
+            } else if (divsText.includes('1 2 3 4 5')) {
+                ctx.fillStyle = '#00FF00';
+            } else if (divsText.includes('1 2 3 4')) {
+                ctx.fillStyle = '#FFFF00';
+            }
+            ctx.fillText('Divisors: ' + divsText, 50, 140);
+            ctx.fillStyle = '#E3DBB6';
+            ctx.fillText('Factors: ' + divs[currentNum].getFactors(currentNum), 50, 165);
+
+            ctx.fillStyle = (divs[currentNum].divSum(currentNum) / currentNum > 1.89) ? '#FF0000' : '#E3DBB6';
+            ctx.fillText(`Divisors Total: ${divs[currentNum].divSum(currentNum)} | Ratio 1 : ${(divs[currentNum].divSum(currentNum) / currentNum).toFixed(2)}`, 250, 165);
+            ctx.fillStyle = '#E3DBB6';
+            ctx.fillText(`Divisors Total Including Itself: ${divs[currentNum].divSum2(currentNum)} | Ratio 1 : ${(divs[currentNum].divSum2(currentNum) / currentNum).toFixed(2)}`, 560, 165);
+
+            // Base Conversions
+            ctx.font = '9px Arial';
+            ctx.fillText('Binary: ' + currentNum.toString(2).padStart(12, '0'), 475, 20);
+            ctx.fillText('Hexadecimal: ' + currentNum.toString(16).toUpperCase().padStart(4, '0'), 475, 35);
+            ctx.fillText('Square: ' + (currentNum * currentNum), 475, 50);
+            ctx.fillText('Square Root: ' + Math.sqrt(currentNum).toFixed(2), 475, 65);
+
+            ctx.fillText('Arc Tangent: ' + Math.atan(currentNum).toFixed(2), 600, 20);
+            ctx.fillText('Sine of Angle: ' + Math.sin(currentNum * Math.PI / 180).toFixed(2), 600, 35);
+            ctx.fillText('Cosine of Angle: ' + Math.cos(currentNum * Math.PI / 180).toFixed(2), 600, 50);
+            ctx.fillText('Logarithm: ' + (currentNum > 0 ? Math.log(currentNum).toFixed(2) : 'undefined'), 600, 65);
+
+            ctx.fillText('Base 4 Quaternary: ' + divs[currentNum].convert(currentNum, 4), 743, 20);
+            ctx.fillText('Base 5 Quinary: ' + divs[currentNum].convert(currentNum, 5), 743, 35);
+            ctx.fillText('Base 6 Senary: ' + divs[currentNum].convert(currentNum, 6), 743, 50);
+            ctx.fillText('Base 7 Septenary: ' + divs[currentNum].convert(currentNum, 7), 743, 65);
+
+            ctx.fillText('Base 8 Octal: ' + divs[currentNum].convert(currentNum, 8), 865, 20);
+            ctx.fillText('Base 9 Nonary: ' + divs[currentNum].convert(currentNum, 9), 865, 35);
+            ctx.fillText('Base 11 Undecimal: ' + divs[currentNum].convert(currentNum, 11), 865, 50);
+            ctx.fillText('Base 12 Duodecimal: ' + divs[currentNum].convert(currentNum, 12), 865, 65);
+
+            // Indicators
+            ctx.font = '8px Arial';
+            ctx.textAlign = 'center';
+            const indicators = [
+                { label: 'Reg', check: () => divsText.includes(' 2 ') || divsText.includes(' 3 ') || divsText.includes(' 5 '), x: 150 },
+                { label: 'Prime', check: () => divs[currentNum].isPrime(currentNum), x: 180 },
+                { label: 'Fib', check: () => divs[currentNum].isFibonacci(currentNum), x: 210 },
+                { label: 'Perfect', check: () => divs[currentNum].divSum(currentNum) === currentNum, x: 240 },
+                { label: 'Cat', check: () => divs[currentNum].isCatalan(currentNum), x: 270 },
+                { label: 'Bell', check: () => divs[currentNum].isBell(currentNum), x: 300 }
+            ];
+
+            indicators.forEach(ind => {
+                if (ind.check()) {
+                    ctx.fillStyle = ind.label === 'Cat' || ind.label === 'Bell' ? '#B6B6E3' : '#E3DBB6';
+                    ctx.beginPath();
+                    ctx.arc(ind.x, 40, 12.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                    ctx.fillStyle = '#000000';
+                    ctx.fillText(ind.label, ind.x, 43);
+                } else {
+                    ctx.strokeStyle = '#BABACF';
+                    ctx.beginPath();
+                    ctx.arc(ind.x, 40, 12.5, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    ctx.fillStyle = '#BABACF';
+                    ctx.fillText(ind.label, ind.x, 43);
+                }
+            });
+
+            // Footer
+            ctx.fillStyle = '#7F7F7F';
+            ctx.fillRect(0, 175, canvas.width, 20);
+            ctx.fillStyle = '#000000';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Controls: Click and drag on the number line or use left or right arrow keys. Up and down keys increases or decreases number by 12.', canvas.width / 2, 189);
+        }
+
+        // Mouse Interaction
+        let isDragging = false;
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const y = e.clientY - rect.top;
+            if (y >= 75 && y <= 115) {
+                isDragging = true;
+                currentNum = Math.min(Math.max(0, Math.floor(e.clientX - rect.left)), 1001);
+                document.getElementById('numberInput').value = currentNum;
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                currentNum = Math.min(Math.max(0, Math.floor(e.clientX - rect.left)), 1001);
+                document.getElementById('numberInput').value = currentNum;
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Input Field
+        document.getElementById('numberInput').addEventListener('input', (e) => {
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 0) value = 0;
+            if (value > 1001) value = 1001;
+            currentNum = value;
+            e.target.value = currentNum;
+            draw();
+        });
+
+        // Keyboard Controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' && currentNum < 1001) {
+                currentNum++;
+            } else if (e.key === 'ArrowLeft' && currentNum > 0) {
+                currentNum--;
+            } else if (e.key === 'ArrowUp' && currentNum <= 989) {
+                currentNum += 12;
+            } else if (e.key === 'ArrowDown' && currentNum >= 12) {
+                currentNum -= 12;
+            }
+            document.getElementById('numberInput').value = currentNum;
+            draw();
+        });
+
+        // Initial Draw
+        draw();
+    </script>
+</body>
+</html>
